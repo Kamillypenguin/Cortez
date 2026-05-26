@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Cortex — Protótipo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- Tabler Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.4.0/dist/tabler-icons.min.css">
+
+<link rel="stylesheet" href="styles.css">
+
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #07070A; font-family: 'Inter', sans-serif; }
+  body { color: #F0F0F5; }
+  /* DesignCanvas overrides for our dark theme */
+  .dc-bg-tint { background: #07070A !important; }
+</style>
+
+<!-- React -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Starters & components -->
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="components.jsx"></script>
+
+<!-- Screens -->
+<script type="text/babel" src="screens/Onboarding.jsx"></script>
+<script type="text/babel" src="screens/Dashboard.jsx"></script>
+<script type="text/babel" src="screens/AIAssistant.jsx"></script>
+<script type="text/babel" src="screens/Tasks.jsx"></script>
+<script type="text/babel" src="screens/StatusReport.jsx"></script>
+<script type="text/babel" src="screens/MobileDashboard.jsx"></script>
+
+<script type="text/babel">
+function App() {
+  return (
+    <DesignCanvas style={{ background: '#07070A' }}>
+
+      <DCSection id="entry" title="① Entrada · Onboarding" subtitle="Primeira experiência — seleção de perfil que define cor & conteúdo do app">
+        <DCArtboard id="onboarding" label="Onboarding · Seleção de perfil" width={1440} height={900}>
+          <ScreenOnboarding />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="core" title="② Núcleo · Dashboard + IA" subtitle="As duas telas que o usuário mais vê">
+        <DCArtboard id="dashboard" label="Dashboard principal · dark" width={1440} height={900}>
+          <ScreenDashboard />
+        </DCArtboard>
+        <DCArtboard id="ai" label="Assistente de IA · tela dedicada" width={1440} height={900}>
+          <ScreenAIAssistant />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="contexts" title="③ Contextos por perfil" subtitle="O mesmo design system, dois mundos diferentes">
+        <DCArtboard id="tasks" label="Tarefas · perfil Estudante" width={1440} height={900}>
+          <ScreenTasks />
+        </DCArtboard>
+        <DCArtboard id="status" label="Status Report · perfil Coordenador" width={1440} height={900}>
+          <ScreenStatusReport />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="mobile" title="④ Mobile" subtitle="Dashboard mobile (iPhone) — thumb-friendly, IA em destaque">
+        <DCArtboard id="mobile-home" label="iOS · Dashboard" width={420} height={870}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' }}>
+            <ScreenMobile />
+          </div>
+        </DCArtboard>
+      </DCSection>
+
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+
+</body>
+</html>
