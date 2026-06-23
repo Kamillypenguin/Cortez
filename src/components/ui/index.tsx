@@ -110,15 +110,32 @@ export function NavItem({ icon, label, active, badge, onClick, color }: {
   )
 }
 
-// ===== CheckCircle =====
-export function CheckCircle({ checked, onChange, color = 'var(--c-success)' }: {
-  checked: boolean; onChange: (v: boolean) => void; color?: string
+// ===== CheckCircle — 3 states: none → partial → done → none =====
+export type CheckState = 'none' | 'partial' | 'done'
+
+export function CheckCircle({ state = 'none', onChange, color = 'var(--c-success)' }: {
+  state?: CheckState; onChange: (v: CheckState) => void; color?: string
 }) {
+  const next: Record<CheckState, CheckState> = { none: 'partial', partial: 'done', done: 'none' }
+  const isDone = state === 'done'
+  const isPartial = state === 'partial'
   return (
-    <button className={`check-circle ${checked ? 'checked' : ''}`}
-      onClick={() => onChange(!checked)}
-      style={checked ? { background: color, borderColor: color } : {}}>
-      {checked && <Icon name="check" size={12} style={{ color: 'white' }} />}
+    <button
+      className={`check-circle ${isDone ? 'checked' : ''}`}
+      onClick={() => onChange(next[state])}
+      title={isDone ? 'Concluída' : isPartial ? 'Em andamento' : 'A fazer'}
+      style={{
+        position: 'relative', flexShrink: 0,
+        background: isDone ? color : isPartial ? 'transparent' : 'transparent',
+        borderColor: isDone ? color : isPartial ? color : undefined,
+      }}
+    >
+      {isDone && <Icon name="check" size={12} style={{ color: 'white' }} />}
+      {isPartial && (
+        <svg width="12" height="12" viewBox="0 0 12 12" style={{ position: 'absolute' }}>
+          <circle cx="6" cy="6" r="5" fill="none" stroke={color} strokeWidth="2" strokeDasharray="16 32" strokeLinecap="round" />
+        </svg>
+      )}
     </button>
   )
 }

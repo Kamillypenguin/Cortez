@@ -1,0 +1,369 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── USUÁRIO ──────────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(uuid())
+  nome         String
+  email        String   @unique
+  senhaHash    String?
+  fotoPerfil   String?
+  cargo        String?
+  provider     String   @default("email")   // email | google | microsoft
+  providerId   String?
+  status       String   @default("ativo")   // ativo | inativo | bloqueado
+  dataCriacao  DateTime @default(now())
+  ultimoAcesso DateTime @default(now())
+
+  ambientes      Ambiente[]
+  projetos       Projeto[]
+  tarefas        Task[]
+  eventos        Event[]
+  documentos     Document[]
+  mapasMentais   MindMap[]
+  relatorios     Report[]
+  chatsIA        ChatIA[]
+  refreshTokens  RefreshToken[]
+  auditLogs      AuditLog[]
+  atividades     AtividadeTime[]
+  comentarios    Comentario[]
+  riscos         Risco[]
+
+  @@map("users")
+}
+
+// ─── REFRESH TOKEN ────────────────────────────────────────────────────────────
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  usuarioId String
+  expiresAt DateTime
+  revogado  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  usuario   User     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+// ─── AMBIENTE ─────────────────────────────────────────────────────────────────
+
+model Ambiente {
+  id        String   @id @default(uuid())
+  nome      String
+  icone     String?  @default("folder")
+  cor       String?  @default("#6366F1")
+  ativo     Boolean  @default(true)
+  usuarioId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  usuario      User       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  projetos     Projeto[]
+  tarefas      Task[]
+  eventos      Event[]
+  documentos   Document[]
+  mapasMentais MindMap[]
+  chatsIA      ChatIA[]
+
+  @@map("ambientes")
+}
+
+// ─── PROJETO ──────────────────────────────────────────────────────────────────
+// Um projeto agrupa tarefas, documentos e membros do time.
+// Ex: "TCC · Visão Computacional", "Disciplina · Estatística"
+
+model Projeto {
+  id          String   @id @default(uuid())
+  nome        String
+  descricao   String?
+  cor         String   @default("#6366F1")
+  icone       String?  @default("folder")
+  status      String   @default("ativo")   // ativo | pausado | concluido | arquivado
+  usuarioId   String
+  ambienteId  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  usuario     User       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  ambiente    Ambiente?  @relation(fields: [ambienteId], references: [id], onDelete: SetNull)
+  tarefas     Task[]
+  documentos  Document[]
+  membros     MembroTime[]
+  atividades  AtividadeTime[]
+  riscos      Risco[]
+
+  @@map("projetos")
+}
+
+// ─── TAREFA ───────────────────────────────────────────────────────────────────
+// Uma tarefa pertence a um usuário e opcionalmente a um Projeto.
+
+model Task {
+  id         String   @id @default(uuid())
+  titulo     String
+  descricao  String?
+  status     String   @default("none")     // none | partial | done
+  prioridade String   @default("normal")   // normal | attention | urgent
+  proj       String?                       // nome de exibição (fallback sem projeto)
+  projColor  String   @default("#6366F1")
+  due        String
+  durMin     Int      @default(30)
+  usuarioId  String
+  ambienteId String?
+  projetoId  String?                       // FK para Projeto
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  usuario    User      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  ambiente   Ambiente? @relation(fields: [ambienteId], references: [id], onDelete: SetNull)
+  projeto    Projeto?  @relation(fields: [projetoId], references: [id], onDelete: SetNull)
+  responsaveis TarefaResponsavel[]
+  comentarios  Comentario[]
+
+  @@map("tasks")
+}
+
+// ─── RESPONSÁVEL POR TAREFA ───────────────────────────────────────────────────
+// Membros do time atribuídos a uma tarefa (muitos-para-muitos)
+
+model TarefaResponsavel {
+  id        String   @id @default(uuid())
+  tarefaId  String
+  email     String   // email do responsável (membro do time)
+  nome      String?
+  createdAt DateTime @default(now())
+
+  tarefa    Task     @relation(fields: [tarefaId], references: [id], onDelete: Cascade)
+
+  @@unique([tarefaId, email])
+  @@map("tarefa_responsaveis")
+}
+
+// ─── EVENTO ───────────────────────────────────────────────────────────────────
+
+model Event {
+  id         String   @id @default(uuid())
+  titulo     String
+  time       String
+  loc        String?
+  color      String   @default("#6366F1")
+  dayNum     Int
+  usuarioId  String
+  ambienteId String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  usuario    User      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  ambiente   Ambiente? @relation(fields: [ambienteId], references: [id], onDelete: SetNull)
+
+  @@map("events")
+}
+
+// ─── DOCUMENTO ────────────────────────────────────────────────────────────────
+
+model Document {
+  id            String   @id @default(uuid())
+  nome          String
+  tipo          String   // docx | pdf | xlsx | png | pptx
+  tamanho       String?
+  url           String?
+  compartilhado Boolean  @default(false)
+  usuarioId     String
+  ambienteId    String?
+  projetoId     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  usuario     User      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  ambiente    Ambiente? @relation(fields: [ambienteId], references: [id], onDelete: SetNull)
+  projeto     Projeto?  @relation(fields: [projetoId], references: [id], onDelete: SetNull)
+  acessos     DocumentAcesso[]
+  comentarios Comentario[]
+
+  @@map("documents")
+}
+
+model DocumentAcesso {
+  id         String   @id @default(uuid())
+  documentId String
+  email      String
+  permissao  String   @default("view")  // view | edit
+  createdAt  DateTime @default(now())
+
+  documento  Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, email])
+  @@map("document_acessos")
+}
+
+// ─── MAPA MENTAL ──────────────────────────────────────────────────────────────
+
+model MindMap {
+  id         String   @id @default(uuid())
+  titulo     String
+  estrutura  String   @default("{}")
+  usuarioId  String
+  ambienteId String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  usuario    User      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  ambiente   Ambiente? @relation(fields: [ambienteId], references: [id], onDelete: SetNull)
+
+  @@map("mind_maps")
+}
+
+// ─── RELATÓRIO ────────────────────────────────────────────────────────────────
+
+model Report {
+  id        String   @id @default(uuid())
+  titulo    String
+  tipo      String   // semanal | mensal | custom
+  dados     String   @default("{}")
+  usuarioId String
+  createdAt DateTime @default(now())
+
+  usuario   User     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("reports")
+}
+
+// ─── CHAT IA ──────────────────────────────────────────────────────────────────
+
+model ChatIA {
+  id         String   @id @default(uuid())
+  titulo     String?  @default("Nova conversa")
+  usuarioId  String
+  ambienteId String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  usuario    User        @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  ambiente   Ambiente?   @relation(fields: [ambienteId], references: [id], onDelete: SetNull)
+  mensagens  MensagemIA[]
+
+  @@map("chats_ia")
+}
+
+model MensagemIA {
+  id        String   @id @default(uuid())
+  chatId    String
+  usuarioId String
+  mensagem  String
+  resposta  String?
+  tokens    Int?
+  createdAt DateTime @default(now())
+
+  chat      ChatIA   @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@map("mensagens_ia")
+}
+
+// ─── MEMBROS DO TIME ──────────────────────────────────────────────────────────
+// Pessoas convidadas para colaborar em um Projeto
+
+model MembroTime {
+  id        String   @id @default(uuid())
+  projetoId String
+  email     String
+  nome      String?
+  fotoPerfil String?
+  papel     String   @default("membro")    // admin | membro | visualizador
+  status    String   @default("pendente")  // pendente | ativo | removido
+  online    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projeto   Projeto  @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+
+  @@unique([projetoId, email])
+  @@map("membros_time")
+}
+
+// ─── ATIVIDADE DO TIME ────────────────────────────────────────────────────────
+// Feed de atividades colaborativas visíveis na dashboard e na tela de Colaboração
+
+model AtividadeTime {
+  id         String   @id @default(uuid())
+  projetoId  String
+  usuarioId  String
+  nomeUsuario String
+  tipo       String   // comentou | concluiu | criou | atualizou | enviou | mencionou | compartilhou
+  entidade   String   // Task | Document | Event | etc
+  entidadeId String?
+  descricao  String   // ex: "comentou em Cap3_revisao_2.docx"
+  alvo       String?  // nome do arquivo/tarefa alvo
+  createdAt  DateTime @default(now())
+
+  projeto    Projeto  @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+  usuario    User     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("atividades_time")
+}
+
+// ─── COMENTÁRIO ───────────────────────────────────────────────────────────────
+// Comentários em Tarefas ou Documentos
+
+model Comentario {
+  id         String   @id @default(uuid())
+  texto      String
+  usuarioId  String
+  tarefaId   String?
+  documentId String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  usuario    User      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  tarefa     Task?     @relation(fields: [tarefaId], references: [id], onDelete: Cascade)
+  documento  Document? @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@map("comentarios")
+}
+
+// ─── RISCO / IMPEDIMENTO ──────────────────────────────────────────────────────
+// Riscos e bloqueadores vinculados a um Projeto — gerenciados no Status Report
+
+model Risco {
+  id         String   @id @default(uuid())
+  titulo     String
+  descricao  String?
+  severidade String   @default("atencao")  // critico | atencao | baixo
+  impacto    String?
+  status     String   @default("aberto")   // aberto | mitigado | resolvido
+  projetoId  String
+  usuarioId  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  projeto    Projeto  @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+  usuario    User     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("riscos")
+}
+
+// ─── AUDITORIA ────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  usuarioId  String
+  acao       String   // CREATE | UPDATE | DELETE | LOGIN | LOGOUT
+  entidade   String   // Task | Event | Document | Projeto | etc
+  entidadeId String?
+  dados      String?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  usuario    User     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("audit_logs")
+}

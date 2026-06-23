@@ -69,7 +69,6 @@ function renderText(text: string) {
 }
 
 export function AIAssistant() {
-  const [nav, setNav] = useState('ai')
   const [messages, setMessages] = useState<Msg[]>(INITIAL)
   const [input, setInput] = useState('')
   const [activeChat, setActiveChat] = useState('current')
@@ -95,7 +94,7 @@ export function AIAssistant() {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '220px 260px 1fr', height: '100%', background: 'var(--bg-base)', overflow: 'hidden' }}>
 
-      <Sidebar active={nav} onNav={setNav} />
+      <Sidebar />
 
       {/* History sidebar */}
       <aside style={{ background: 'var(--bg-surface)', borderRight: '1px solid var(--bd-default)', padding: 14, display: 'flex', flexDirection: 'column' }}>
